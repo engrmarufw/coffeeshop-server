@@ -6,7 +6,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const port = process.env.PORT || 5000;
 const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
-
+const multer = require('multer');
 // use middle wares
 
 app.use(cors());
@@ -50,11 +50,11 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
-
+const upload = multer();
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         // creat db an db collections
 
@@ -70,7 +70,31 @@ async function run() {
         });
 
 
+        app.post('/imguploadimgbb', upload.single('image'), async (req, res) => {
+            const a = req.file
 
+            try {
+                const blob = new Blob([a.buffer], { type: a.mimetype });
+                const formData = new FormData();
+                formData.append('image', blob, a.originalname);
+                const response = await fetch('https://api.imgbb.com/1/upload?key=2a55d4892836932d2e39cadb5508ce97', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const imgbbUrl = data.data.url;
+                    res.send(JSON.stringify(imgbbUrl));
+                } else {
+                    console.error('Error uploading image to imgbb:', response.statusText);
+                    res.send(response.status);
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                res.send(error);
+            }
+        })
 
         //get users
         app.get('/users', async (req, res) => {
@@ -80,10 +104,10 @@ async function run() {
         // Get user by email
         app.get('/users/emailfind/:email', async (req, res) => {
             const userEmail = req.params.email;
-            const result = await usersCollection.find({ email: userEmail }).toArray();
+            const result = await usersCollection.findOne({ email: userEmail });
             res.send(result);
         });
-      
+
 
 
 
@@ -134,9 +158,6 @@ async function run() {
         // });
 
 
-        // DB_USER=espresso
-        // DB_PASS=jKHWXBdnE0i2ipo2
-        // ACCESS_TOKEN=1ba092ceea28674aa4560ca0e50a88a503907861b6502cde5e363cd5e13ce3a5d667cc0a486f67c19c1b52328dc53032fb76963f7c24ce313511cf23862e8442
 
         // users update 
         app.put('/users/:id', async (req, res) => {
@@ -290,8 +311,10 @@ async function run() {
         app.post('/carts', async (req, res) => {
             try {
                 const cartCoffee = req.body; // Assuming the request body contains the new coffee data
+                console.log(cartCoffee);
                 const result = await cartsCollection.insertOne(cartCoffee);
                 res.send(result); // Send back the inserted coffee
+                console.log(result);
             } catch (error) {
                 console.error(error);
                 res.status(500).send('Internal Server Error');
