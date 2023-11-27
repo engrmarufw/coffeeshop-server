@@ -8,6 +8,7 @@ const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 // use middle wares
+const nodemailer = require('nodemailer');
 
 app.use(cors());
 app.use(express.json());
@@ -62,6 +63,92 @@ async function run() {
         const coffeesCollection = client.db("expressoDB").collection("coffees");
         const cartsCollection = client.db("expressoDB").collection("carts");
         const ordersCollection = client.db("expressoDB").collection("orders");
+
+
+        //email
+        app.post('/sendemail', async (req, res) => {
+            const mail = req.body
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASSWORD
+                }
+            });
+            const body = `
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Email Template</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        margin: 0;
+                        padding: 0;
+                    }
+            
+                    .container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                        padding: 20px;
+                    }
+            
+                    .header {
+                        text-align: center;
+                        background-color: #e1fbfc;
+                        padding: 10px;
+                    }
+            
+                    .footer {
+                        text-align: center;
+                        background-color: #e1fbfc;
+                        padding: 10px;
+                    }
+            
+                    .body-content {
+                        padding: 20px;
+                        background-color: #ffffff;
+                    }
+            
+                    .button {
+                        display: inline-block;
+                        padding: 10px 20px;
+                        background-color: #007BFF;
+                        color: white !important;
+                        text-decoration: none;
+                        border-radius: 5px;
+                        font-weight: bolder !important;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Espresso Emporium</h1>
+                    </div>
+            
+                    <div class="body-content">
+                        <h2>Name: <strong>${mail.name}</strong></h2>
+                        <p>Email: <strong>${mail.email}</strong></p>
+                        <p>Message: ${mail.message}</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            `;
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: 'engrmarufw@gmail.com',
+                subject: 'Contact',
+                html: body
+            };
+            await transporter.sendMail(mailOptions);
+            res.send();
+
+        })
+
         // post users
         app.post('/jwt', (req, res) => {
             const user = req.body;
