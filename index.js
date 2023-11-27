@@ -10,7 +10,8 @@ const multer = require('multer');
 // use middle wares
 const nodemailer = require('nodemailer');
 
-app.use(cors());
+// app.use(cors());
+app.use(cors({ origin: process.env.REMOTE_CLIENT_APP, credentials: true }));
 app.use(express.json());
 
 
